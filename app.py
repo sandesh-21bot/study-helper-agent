@@ -6,7 +6,7 @@ import docx
 # Initialize Groq client using Streamlit Secrets
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-st.title("📘 Study Helper AI Agent (SANDESH Version)")
+st.title("📘 Study Helper AI Agent (SANDESH vvVersion)")
 
 # Upload file
 uploaded_file = st.file_uploader("Upload your study notes (PDF or DOCX)", type=["pdf", "docx"])
