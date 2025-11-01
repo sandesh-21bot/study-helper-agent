@@ -1,11 +1,10 @@
-import os
 import streamlit as st
 from groq import Groq
 from PyPDF2 import PdfReader
 import docx
 
-# Initialize Groq client
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# Initialize Groq client using Streamlit Secrets
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 st.title("📘 Study Helper AI Agent (SANDESH Version)")
 
