@@ -2,34 +2,35 @@ import streamlit as st
 from groq import Groq
 from PyPDF2 import PdfReader
 import docx
-import urllib.parse  # added import
+import urllib.parse  # required for printable view
 
 # Initialize Groq client using Streamlit Secrets
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-st.title("📘 Study Helper AI Agent (SANDESH vvVersion)")
+st.title("📘 Study Helper AI Agent (SANDESH Version)")
 
-# Add CSS to hide Streamlit main menu (removes the "Fork" option in hosted apps)
+# --- UI Customization ---
 st.markdown(
     """
     <style>
     /* Hide Streamlit main menu (contains Fork in some deployments) */
     #MainMenu { visibility: hidden; }
-    /* Attempt to hide any fork-specific controls if present */
+    /* Hide any fork or edit buttons if present */
     div[title="Fork this app"], button[title="Fork this app"], a[aria-label="Fork"] { display: none !important; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# New: friendly introduction and brief instructions
-st.markdown("Upload your file (Word (.docx) or PDF) to get simplified, point-wise answers tailored to the marks you choose.")
-st.info("Tip: Upload study notes or lecture slides. Select marks (2, 5, 10, 15) and ask a concise question for a structured answer.")
+# --- Intro + Instructions ---
+st.markdown("Upload your study file (Word or PDF) to get simplified, point-wise answers tailored to your selected marks.")
+st.info("💡 Tip: Upload class notes or study material. Then select 2, 5, 10, or 15 marks and ask your question.")
 
-# Upload file (improved label + caption)
-uploaded_file = st.file_uploader("Upload your study notes (Word or PDF)", type=["pdf", "docx"])
-st.caption("Accepted formats: .pdf, .docx — The agent will read your notes and produce a concise, point-wise answer.")
+# --- File Upload ---
+uploaded_file = st.file_uploader("📄 Upload your study notes", type=["pdf", "docx"])
+st.caption("Accepted formats: PDF or DOCX — The AI will read your notes and create concise answers.")
 
+# --- Text Extraction Function ---
 def extract_text(file):
     if file.name.endswith(".pdf"):
         reader = PdfReader(file)
@@ -44,6 +45,7 @@ def extract_text(file):
     else:
         return ""
 
+# --- AI Query Function ---
 def ask_ai(context, question, marks):
     prompt = f"""
     You are a study helper AI. Use the notes below to generate a clear, structured answer.
@@ -63,51 +65,59 @@ def ask_ai(context, question, marks):
     )
     return response.choices[0].message.content
 
+# --- Main Logic ---
 if uploaded_file:
     text = extract_text(uploaded_file)
     st.success("✅ File processed successfully!")
 
-    # New: show a short preview and length so user can confirm content
+    # Show preview
     preview = text[:1000] + ("..." if len(text) > 1000 else "")
-    st.subheader("Preview of extracted notes")
-    st.text_area("Notes preview (read-only)", value=preview, height=200)
-
+    st.subheader("📄 Preview of Extracted Notes")
+    st.text_area("Notes Preview (read-only)", value=preview, height=200)
     st.caption(f"Extracted text length: {len(text)} characters")
 
-    # NEW: Download and printable view placed where 'fork' would be
-    col1, col2 = st.columns([1,1])
+    # --- Download + Printable View ---
+    col1, col2 = st.columns([1, 1])
+
     with col1:
-        # Download full notes as a .txt file
         st.download_button(
             label="📥 Download Notes",
             data=text.encode("utf-8"),
             file_name="extracted_notes.txt",
             mime="text/plain"
         )
+
     with col2:
-        # Create a printable HTML data URL for opening in a new tab
-        printable_html = f"""<html><head><title>Printable Notes</title></head><body><pre style="white-space:pre-wrap">{html_escape := urllib.parse.quote(text)}</pre></body></html>"""
-        # Use data URL for printable view (encoded as URI component)
-        data_url = "data:text/html;charset=utf-8," + urllib.parse.quote(f"<html><head><title>Printable Notes</title></head><body><pre style='white-space:pre-wrap'>{text}</pre></body></html>")
+        # Encode for printable HTML
+        html_escape = urllib.parse.quote(text)
+        printable_html = f"""
+        <html>
+          <head><title>Printable Notes</title></head>
+          <body><pre style="white-space:pre-wrap">{html_escape}</pre></body>
+        </html>
+        """
+        data_url = "data:text/html;charset=utf-8," + urllib.parse.quote(printable_html)
         st.markdown(f"[🖨️ Open printable view]({data_url})", unsafe_allow_html=True)
 
-    # New: sample questions expander and placeholder
-    with st.expander("Example questions"):
-        st.write("- Explain the main concepts of X in point form.")
-        st.write("- Summarize the key differences between A and B.")
-        st.write("- Provide a 10-mark answer on topic Y with bullet points.")
+    # --- Example Questions ---
+    with st.expander("💬 Example Questions"):
+        st.write("- Explain the main concepts of Object-Oriented Programming.")
+        st.write("- Summarize the key differences between procedural and OOP.")
+        st.write("- Provide a 10-mark answer on system architecture in point form.")
 
-    question = st.text_input("Enter your question:", placeholder="e.g., Summarize key points about photosynthesis")
-    marks = st.selectbox("Select marks:", [2, 5, 10, 15])
+    # --- Question Input ---
+    question = st.text_input("✏️ Enter your question:", placeholder="e.g., Explain inheritance in OOP.")
+    marks = st.selectbox("🏷️ Select marks:", [2, 5, 10, 15])
 
-    if st.button("Generate Answer"):
+    # --- Generate Answer Button ---
+    if st.button("🚀 Generate Answer"):
         if question.strip() and text.strip():
             try:
-                with st.spinner("Generating answer..."):
+                with st.spinner("🧠 Generating answer..."):
                     answer = ask_ai(text, question, marks)
                 st.subheader("🧾 Generated Answer:")
                 st.write(answer)
             except Exception as e:
-                st.error(f"An error occurred while generating the answer: {e}")
+                st.error(f"⚠️ An error occurred while generating the answer: {e}")
         else:
-            st.warning("Please upload a valid file and enter a question.")
+            st.warning("⚠️ Please upload a valid file and enter a question.")
