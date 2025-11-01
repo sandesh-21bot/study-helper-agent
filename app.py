@@ -9,6 +9,19 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 st.title("📘 Study Helper AI Agent (SANDESH vvVersion)")
 
+# Add CSS to hide Streamlit main menu (removes the "Fork" option in hosted apps)
+st.markdown(
+    """
+    <style>
+    /* Hide Streamlit main menu (contains Fork in some deployments) */
+    #MainMenu { visibility: hidden; }
+    /* Attempt to hide any fork-specific controls if present */
+    div[title="Fork this app"], button[title="Fork this app"], a[aria-label="Fork"] { display: none !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # New: friendly introduction and brief instructions
 st.markdown("Upload your file (Word (.docx) or PDF) to get simplified, point-wise answers tailored to the marks you choose.")
 st.info("Tip: Upload study notes or lecture slides. Select marks (2, 5, 10, 15) and ask a concise question for a structured answer.")
