@@ -2,6 +2,7 @@ import streamlit as st
 from groq import Groq
 from PyPDF2 import PdfReader
 import docx
+import urllib.parse  # added import
 
 # Initialize Groq client using Streamlit Secrets
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
@@ -59,6 +60,23 @@ if uploaded_file:
     st.text_area("Notes preview (read-only)", value=preview, height=200)
 
     st.caption(f"Extracted text length: {len(text)} characters")
+
+    # NEW: Download and printable view placed where 'fork' would be
+    col1, col2 = st.columns([1,1])
+    with col1:
+        # Download full notes as a .txt file
+        st.download_button(
+            label="📥 Download Notes",
+            data=text.encode("utf-8"),
+            file_name="extracted_notes.txt",
+            mime="text/plain"
+        )
+    with col2:
+        # Create a printable HTML data URL for opening in a new tab
+        printable_html = f"""<html><head><title>Printable Notes</title></head><body><pre style="white-space:pre-wrap">{html_escape := urllib.parse.quote(text)}</pre></body></html>"""
+        # Use data URL for printable view (encoded as URI component)
+        data_url = "data:text/html;charset=utf-8," + urllib.parse.quote(f"<html><head><title>Printable Notes</title></head><body><pre style='white-space:pre-wrap'>{text}</pre></body></html>")
+        st.markdown(f"[🖨️ Open printable view]({data_url})", unsafe_allow_html=True)
 
     # New: sample questions expander and placeholder
     with st.expander("Example questions"):
