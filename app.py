@@ -8,8 +8,13 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 st.title("📘 Study Helper AI Agent (SANDESH vvVersion)")
 
-# Upload file
-uploaded_file = st.file_uploader("Upload your study notes (PDF or DOCX)", type=["pdf", "docx"])
+# New: friendly introduction and brief instructions
+st.markdown("Upload your file (Word (.docx) or PDF) to get simplified, point-wise answers tailored to the marks you choose.")
+st.info("Tip: Upload study notes or lecture slides. Select marks (2, 5, 10, 15) and ask a concise question for a structured answer.")
+
+# Upload file (improved label + caption)
+uploaded_file = st.file_uploader("Upload your study notes (Word or PDF)", type=["pdf", "docx"])
+st.caption("Accepted formats: .pdf, .docx — The agent will read your notes and produce a concise, point-wise answer.")
 
 def extract_text(file):
     if file.name.endswith(".pdf"):
@@ -48,13 +53,30 @@ if uploaded_file:
     text = extract_text(uploaded_file)
     st.success("✅ File processed successfully!")
 
-    question = st.text_input("Enter your question:")
+    # New: show a short preview and length so user can confirm content
+    preview = text[:1000] + ("..." if len(text) > 1000 else "")
+    st.subheader("Preview of extracted notes")
+    st.text_area("Notes preview (read-only)", value=preview, height=200)
+
+    st.caption(f"Extracted text length: {len(text)} characters")
+
+    # New: sample questions expander and placeholder
+    with st.expander("Example questions"):
+        st.write("- Explain the main concepts of X in point form.")
+        st.write("- Summarize the key differences between A and B.")
+        st.write("- Provide a 10-mark answer on topic Y with bullet points.")
+
+    question = st.text_input("Enter your question:", placeholder="e.g., Summarize key points about photosynthesis")
     marks = st.selectbox("Select marks:", [2, 5, 10, 15])
 
     if st.button("Generate Answer"):
         if question.strip() and text.strip():
-            answer = ask_ai(text, question, marks)
-            st.subheader("🧾 Generated Answer:")
-            st.write(answer)
+            try:
+                with st.spinner("Generating answer..."):
+                    answer = ask_ai(text, question, marks)
+                st.subheader("🧾 Generated Answer:")
+                st.write(answer)
+            except Exception as e:
+                st.error(f"An error occurred while generating the answer: {e}")
         else:
             st.warning("Please upload a valid file and enter a question.")
